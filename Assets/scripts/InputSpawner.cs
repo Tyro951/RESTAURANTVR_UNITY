@@ -1,51 +1,52 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement; 
+using UnityEngine.SceneManagement;
 
 public class InputSpawner : MonoBehaviour
 {
-    [Header("Table (Main Droite - Gâchette)")]
+    [Header("Prefabs")]
     public GameObject tablePrefab;
-    public InputActionReference tableSpawnAction;
-
-    [Header("Chaise (Main Droite - Bouton A)")]
     public GameObject chairPrefab;
-    public InputActionReference chairSpawnAction;
-
-    [Header("Assiette (Main Gauche - Gâchette)")]
     public GameObject decoPrefab;
+
+    [Header("Inputs")]
+    public InputActionReference tableSpawnAction;
+    public InputActionReference chairSpawnAction;
     public InputActionReference decoSpawnAction;
-
-    public float distance = 1.5f;
-
-    [Header("Reset Scene (Bouton Menu ou Autre)")]
     public InputActionReference resetAction;
+
+    public float distance = 2.0f;
 
     void Update()
     {
+        // On vérifie chaque action
         if (tableSpawnAction.action.triggered) Spawn(tablePrefab);
         if (chairSpawnAction.action.triggered) Spawn(chairPrefab);
         if (decoSpawnAction.action.triggered) Spawn(decoPrefab);
-        if (resetAction.action.triggered)
-        {
-            ResetScene();
-        }
-    }
-
-    public void ResetScene()
-    {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        
+        if (resetAction.action.triggered) SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     void Spawn(GameObject prefab)
     {
         if (prefab == null) return;
-        Transform cam = Camera.main.transform;
+
+        Camera mainCam = Camera.main;
+        if (mainCam == null) return;
+
+        Vector3 forward = mainCam.transform.forward;
+        forward.y = 0;
+        forward.Normalize();
+
+        Vector3 finalPos = mainCam.transform.position + (forward * distance);
+
+        float groundY = 0f;
+        if (prefab == decoPrefab) groundY = 0.75f; 
+
+        finalPos.y = groundY;
+
+        Instantiate(prefab, finalPos, Quaternion.Euler(0, mainCam.transform.eulerAngles.y, 0));
         
-        Vector3 randomOffset = new Vector3(Random.Range(-0.2f, 0.2f), 0, Random.Range(-0.2f, 0.2f));
-        Vector3 spawnPos = cam.position + (cam.forward * distance) + randomOffset;
-        
-        spawnPos.y = 0.8f; 
-        Instantiate(prefab, spawnPos, Quaternion.Euler(0, cam.eulerAngles.y, 0));
+        Debug.Log("Objet spawné à : " + finalPos); 
     }
 }
